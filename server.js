@@ -372,13 +372,13 @@ app.post('/api/match/:requestId', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 async function startServer() {
   try {
     await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => console.log(`Community Connect API running on port ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => console.log(`Community Connect API running on port ${PORT}`));
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
     process.exit(1);

@@ -19,5 +19,4 @@ RUN pip3 install --break-system-packages -r requirements.txt
 COPY . .
 
 ENV NODE_ENV=production
-
 CMD ["npm", "start"]

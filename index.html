@@ -203,6 +203,18 @@
   .reject-button { background: #f8e5df; color: #a74431; }
   .reject-reason { margin-top: 12px; padding: 9px 10px; font-size: 12px; }
   @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 28px; } .hero-panel { min-height: 230px; } }
+  .site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .header-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.72); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .header-note::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 0 5px rgba(243,201,104,.15); }
+  .impact-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 0 46px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--line); box-shadow: 0 12px 30px rgba(31,69,58,.06); }
+  .impact-item { padding: 18px 20px; background: rgba(255,255,255,.66); }
+  .impact-item strong { display: block; color: var(--forest-dark); font-family: "Space Grotesk", sans-serif; font-size: 22px; letter-spacing: -.04em; }
+  .impact-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+  .hero-panel .panel-kicker { position: absolute; top: 24px; left: 24px; z-index: 1; color: var(--forest); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .hero-panel .panel-kicker::after { content: "↗"; display: inline-block; margin-left: 6px; color: var(--coral); font-size: 16px; }
+  .workspace-label { display: flex; align-items: center; gap: 10px; }
+  .workspace-label::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+  @media (max-width: 560px) { .site-header { align-items: flex-start; flex-direction: column; gap: 10px; } .header-note { padding-left: 45px; } .impact-strip { grid-template-columns: 1fr; margin-bottom: 34px; } .impact-item { padding: 14px 16px; } }
 </style>
 </head>
 <body>
@@ -248,15 +260,27 @@ function RequestForm() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const sendVerificationCode = async () => {
-    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.requesterEmail, purpose: "requester-action" }) });
-    await readApiResponse(sendResponse);
-    setOtpSent(true);
+    setError("");
+    try {
+      const email = form.requesterEmail.trim().toLowerCase();
+      const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "requester-action" }) });
+      await readApiResponse(sendResponse);
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    }
   };
 
   const verifyEmail = async (purpose) => {
-    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.requesterEmail, purpose, code: otp }) });
-    await readApiResponse(verifyResponse);
-    setEmailVerified(true);
+    setError("");
+    try {
+      const email = form.requesterEmail.trim().toLowerCase();
+      const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose, code: otp }) });
+      await readApiResponse(verifyResponse);
+      setEmailVerified(true);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -353,15 +377,27 @@ function VolunteerForm() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const sendVerificationCode = async () => {
-    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-registration" }) });
-    await readApiResponse(sendResponse);
-    setOtpSent(true);
+    setError("");
+    try {
+      const email = form.email.trim().toLowerCase();
+      const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "volunteer-registration" }) });
+      await readApiResponse(sendResponse);
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    }
   };
 
   const verifyEmail = async () => {
-    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-registration", code: otp }) });
-    await readApiResponse(verifyResponse);
-    setEmailVerified(true);
+    setError("");
+    try {
+      const email = form.email.trim().toLowerCase();
+      const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "volunteer-registration", code: otp }) });
+      await readApiResponse(verifyResponse);
+      setEmailVerified(true);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -628,11 +664,11 @@ function App() {
   if (volunteer) {
     return (
       <div>
-        <header><h1>Community Connect</h1></header>
+        <header><div className="site-header"><h1>Community Connect</h1><div className="header-note">your local help network</div></div></header>
         <main>
           <section className="hero">
             <div><div className="eyebrow">Your community profile</div><h2>Good to have<br /><em>you here.</em></h2><p className="hero-copy">You are signed in and ready to make a difference where it matters.</p></div>
-            <div className="hero-panel"><div className="panel-note"><div className="panel-label">Volunteer status</div><strong>Ready to help nearby.</strong><div className="panel-footer"><span>Profile connected to Community Connect</span></div></div></div>
+            <div className="hero-panel"><div className="panel-kicker">Live connection</div><div className="panel-note"><div className="panel-label">Volunteer status</div><strong>Ready to help nearby.</strong><div className="panel-footer"><span>Profile connected to Community Connect</span></div></div></div>
           </section>
           <div className="card profile-card"><div className="profile-avatar">{volunteer.name.charAt(0).toUpperCase()}</div><div><h2>{volunteer.name}</h2><p>{volunteer.email} · {volunteer.location}</p></div><button className="secondary-button" onClick={() => setEditingProfile(true)}>Edit profile</button><button className="logout-button" onClick={() => { setEditingProfile(false); setVolunteer(null); }}>Sign out</button></div>
           {editingProfile ? <VolunteerProfileEditor volunteer={volunteer} onSave={(updated) => { setVolunteer(updated); setEditingProfile(false); }} onCancel={() => setEditingProfile(false)} /> : <NearbyRequests volunteer={volunteer} />}
@@ -643,7 +679,7 @@ function App() {
 
   return (
     <div>
-      <header><h1>Community Connect</h1></header>
+      <header><div className="site-header"><h1>Community Connect</h1><div className="header-note">your local help network</div></div></header>
       <main>
         <section className="hero">
           <div>
@@ -652,12 +688,18 @@ function App() {
             <p className="hero-copy">A thoughtful way to connect people who need a hand with neighbors ready to help.</p>
           </div>
           <div className="hero-panel">
+            <div className="panel-kicker">Live connection</div>
             <div className="panel-note">
               <div className="panel-label">Today in the community</div>
               <strong>Help is closer than you think.</strong>
               <div className="panel-footer"><div className="mini-avatars"><i>A</i><i>M</i><i>S</i></div><span>neighbors showing up</span></div>
             </div>
           </div>
+        </section>
+        <section className="impact-strip" aria-label="Community impact">
+          <div className="impact-item"><strong>01</strong><span>one request starts a ripple</span></div>
+          <div className="impact-item"><strong>nearby</strong><span>support matched with care</span></div>
+          <div className="impact-item"><strong>together</strong><span>neighbors make it lighter</span></div>
         </section>
         <p className="workspace-label">Choose how you want to connect</p>
         <nav>

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Community Connect</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+
+<style>
+  :root {
+    --primary: #2f6f4f;
+    --primary-dark: #234f39;
+    --bg: #f6f8f6;
+    --card-bg: #ffffff;
+    --border: #dbe3dc;
+    --text: #222;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  header {
+    background: var(--primary);
+    color: white;
+    padding: 20px 24px;
+  }
+
+  header h1 { margin: 0; font-size: 22px; }
+
+  main {
+    max-width: 640px;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  nav button {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  nav button.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .card h2 { margin-top: 0; }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+
+  input, textarea {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  textarea { min-height: 80px; resize: vertical; }
+
+  button[type="submit"] {
+    padding: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .result {
+    margin-top: 16px;
+    padding: 12px;
+    background: #eef5ee;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .result ul { margin: 8px 0 0; padding-left: 18px; }
+
+  .status { font-size: 14px; color: var(--primary-dark); }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #172b2a; --muted: #667674; --forest: #174d45; --forest-dark: #103c36; --mint: #dceee5; --coral: #e97859; --sun: #f3c968; --paper: #fbfaf5; --line: #d9e5dd; --shadow: 0 24px 70px rgba(31, 69, 58, 0.12); }
+  body { min-height: 100vh; font-family: "DM Sans", sans-serif; color: var(--ink); background: var(--paper); background-image: radial-gradient(circle at 8% 8%, rgba(220, 238, 229, 0.9) 0, rgba(220, 238, 229, 0) 28%), radial-gradient(circle at 90% 16%, rgba(243, 201, 104, 0.2) 0, rgba(243, 201, 104, 0) 23%), linear-gradient(135deg, #fbfaf5 0%, #f4f7f0 100%); }
+  header { position: relative; overflow: hidden; padding: 22px max(24px, calc((100vw - 1180px) / 2)); background: var(--forest); }
+  header::after { content: ""; position: absolute; width: 220px; height: 220px; right: 8%; top: -150px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; box-shadow: 0 0 0 28px rgba(255,255,255,.05), 0 0 0 58px rgba(255,255,255,.04); }
+  header h1 { position: relative; z-index: 1; display: flex; align-items: center; gap: 11px; margin: 0; font-family: "Space Grotesk", sans-serif; font-size: 19px; letter-spacing: -.02em; }
+  header h1::before { content: "+"; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; font-size: 17px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 74px 24px 90px; }
+  main::before { content: "LOCAL CARE, MADE SIMPLE"; display: block; margin-bottom: 18px; color: var(--coral); font-size: 12px; font-weight: 700; letter-spacing: .13em; }
+  main::after { content: "Help is closer than you think."; display: block; position: absolute; top: 210px; right: max(24px, calc((100vw - 1180px) / 2)); width: 310px; padding: 96px 24px 24px; border-radius: 24px; background: var(--mint); color: var(--forest-dark); font-family: "Space Grotesk", sans-serif; font-size: 24px; line-height: 1.1; box-shadow: inset -50px -50px 0 var(--sun); }
+  nav { position: relative; z-index: 1; display: flex; gap: 9px; max-width: 470px; margin-bottom: 22px; }
+  nav button { flex: 1; padding: 14px 16px; border: 1px solid transparent; border-radius: 12px; background: rgba(255,255,255,.42); color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; transition: 180ms ease; }
+  nav button:hover { border-color: var(--line); color: var(--forest); transform: translateY(-2px); }
+  nav button.active { background: var(--forest); color: white; box-shadow: 0 10px 20px rgba(23,77,69,.16); }
+  .card { position: relative; z-index: 1; max-width: 760px; padding: clamp(24px, 4vw, 42px); border: 1px solid rgba(217,229,221,.9); border-radius: 20px; background: rgba(255,255,255,.88); box-shadow: var(--shadow); animation: rise 420ms ease both; }
+  .card h2 { margin: 0; color: var(--forest-dark); font-family: "Space Grotesk", sans-serif; font-size: 29px; letter-spacing: -.04em; }
+  form { gap: 17px; }
+  input, textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: rgba(255,255,255,.7); color: var(--ink); font-size: 15px; transition: 180ms ease; }
+  input:focus, textarea:focus { border-color: var(--coral); background: white; box-shadow: 0 0 0 4px rgba(233,120,89,.12); }
+  textarea { min-height: 112px; }
+  button[type="submit"] { padding: 14px 18px; border-radius: 10px; background: var(--coral); box-shadow: 0 10px 20px rgba(233,120,89,.2); transition: 180ms ease; }
+  button[type="submit"]:hover { background: #d96245; transform: translateY(-2px); }
+  .result { margin-top: 26px; padding: 18px; border: 1px solid #c7e0d2; border-radius: 12px; background: #eff8f1; }
+  .result ul { display: grid; gap: 8px; padding-left: 0; list-style: none; }
+  .result li { padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,.72); }
+  .result-lead { display: flex; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 12px; }
+  .nearby-badge { padding: 5px 8px; border-radius: 999px; background: var(--mint); color: var(--forest); font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .no-match { margin: 0; color: var(--muted); line-height: 1.5; }
+  .response-status { margin-top: 16px; padding: 12px; border-radius: 10px; background: #f7f3e7; color: var(--forest-dark); font-size: 13px; line-height: 1.45; }
+  .response-status.accepted { background: var(--mint); }
+  .response-status.rejected { background: #f8e5df; color: #8f3d2e; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 760px) { main { padding-top: 46px; } main::after { position: relative; top: auto; right: auto; display: block; width: auto; margin: 30px 0; padding: 60px 24px 24px; } nav { max-width: none; } }
+  @media (max-width: 450px) { header { padding-right: 16px; padding-left: 16px; } main { padding-right: 16px; padding-left: 16px; } }
+  main::before, main::after { display: none; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 54px; align-items: end; margin-bottom: 44px; }
+  .eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 17px; color: var(--coral); font-size: 12px; font-weight: 700; letter-spacing: .13em; }
+  .eyebrow::before { content: ""; width: 28px; height: 2px; background: var(--coral); }
+  .hero h2 { max-width: 700px; margin: 0; color: var(--forest-dark); font-family: "Space Grotesk", sans-serif; font-size: clamp(44px, 6vw, 74px); line-height: .98; letter-spacing: -.06em; }
+  .hero h2 em { color: var(--coral); font-style: normal; }
+  .hero-copy { max-width: 560px; margin: 22px 0 0; color: var(--muted); font-size: 17px; line-height: 1.6; }
+  .hero-panel { position: relative; min-height: 260px; padding: 24px; border-radius: 24px; background: var(--mint); overflow: hidden; }
+  .hero-panel::before { content: ""; position: absolute; width: 170px; height: 170px; right: -45px; top: -62px; border-radius: 50%; background: var(--sun); }
+  .hero-panel::after { content: ""; position: absolute; width: 120px; height: 120px; left: -52px; bottom: -62px; border-radius: 50%; background: var(--coral); }
+  .panel-note { position: absolute; z-index: 1; right: 24px; bottom: 24px; left: 24px; padding: 20px; border: 1px solid rgba(23,77,69,.1); border-radius: 15px; background: rgba(255,255,255,.78); box-shadow: 0 14px 30px rgba(23,77,69,.1); }
+  .panel-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .panel-note strong { display: block; margin: 10px 0 17px; color: var(--forest-dark); font-family: "Space Grotesk", sans-serif; font-size: 22px; line-height: 1.05; }
+  .panel-footer { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .mini-avatars { display: flex; }
+  .mini-avatars i { display: grid; width: 26px; height: 26px; margin-left: -5px; place-items: center; border: 2px solid white; border-radius: 50%; color: white; font-size: 10px; font-style: normal; font-weight: 700; }
+  .mini-avatars i:first-child { margin-left: 0; background: var(--forest); }
+  .mini-avatars i:nth-child(2) { background: var(--coral); }
+  .mini-avatars i:nth-child(3) { background: #7b9d76; }
+  .workspace-label { margin: 0 0 13px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .card-intro { margin: 8px 0 28px; color: var(--muted); line-height: 1.5; }
+  .success-card { display: flex; align-items: center; gap: 14px; }
+  .success-mark { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--mint); color: var(--forest); font-size: 20px; }
+  .error-message { margin: 2px 0 0; color: #a74431; font-size: 13px; }
+  .profile-card { display: flex; align-items: center; gap: 16px; }
+  .profile-avatar { display: grid; width: 52px; height: 52px; flex: 0 0 auto; place-items: center; border-radius: 16px; background: var(--forest); color: white; font-family: "Space Grotesk", sans-serif; font-size: 22px; font-weight: 700; }
+  .profile-card h2 { font-size: 24px; }
+  .profile-card p { margin: 5px 0 0; color: var(--muted); }
+  .logout-button { margin-left: auto; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--forest); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .password-note { margin: -8px 0 0; color: var(--muted); font-size: 12px; }
+  .nearby-list { display: grid; gap: 12px; margin-top: 20px; }
+  .help-item { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.72); }
+  .help-item strong { display: block; color: var(--forest-dark); }
+  .help-item p { margin: 7px 0 12px; color: var(--muted); line-height: 1.45; }
+  .help-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+  .urgent { color: #b44e38; font-weight: 700; }
+  .progress-filter { display: flex; gap: 8px; margin: 18px 0 10px; }
+  .progress-filter button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .progress-filter button.active { border-color: var(--forest); background: var(--forest); color: white; }
+  .complete-note { margin-top: 12px; padding: 9px 10px; font-size: 12px; }
+  .progress-report { border-left: 3px solid var(--forest); }
+  .profile-edit { display: grid; gap: 14px; margin-top: 20px; }
+  .profile-edit-actions { display: flex; gap: 8px; }
+  .otp-row { display: flex; gap: 8px; align-items: stretch; }
+  .otp-row input { min-width: 0; }
+  .otp-button { flex: 0 0 auto; padding: 10px 12px; border: 1px solid var(--forest); border-radius: 9px; background: white; color: var(--forest); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .verified-note { margin: -8px 0 0; color: var(--forest); font-size: 12px; font-weight: 700; }
+  .profile-edit select { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.7); color: var(--ink); font: inherit; }
+  .profile-edit select { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.7); color: var(--ink); font: inherit; }
+  .secondary-button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--forest); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .map-link { display: inline-block; margin-top: 10px; color: var(--forest); font-size: 12px; font-weight: 700; text-decoration: none; }
+  .map-link:hover { color: var(--coral); text-decoration: underline; }
+  .help-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .help-actions button { padding: 8px 12px; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .accept-button { background: var(--forest); color: white; }
+  .reject-button { background: #f8e5df; color: #a74431; }
+  .reject-reason { margin-top: 12px; padding: 9px 10px; font-size: 12px; }
+  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 28px; } .hero-panel { min-height: 230px; } }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+const API_BASE = "http://localhost:5000/api";
+
+function mapsSearchUrl(location) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+}
+
+function mapsDirectionsUrl(origin, destination) {
+  return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+}
+
+async function readApiResponse(response) {
+  const text = await response.text();
+  let body = {};
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch (error) {
+      throw new Error(`Server returned an invalid response (${response.status}).`);
+    }
+  }
+  if (!response.ok) throw new Error(body.error || `Request failed (${response.status}).`);
+  return body;
+}
+
+function RequestForm() {
+  const [form, setForm] = useState({ requesterName: "", requesterEmail: "", description: "", location: "" });
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [responseStatus, setResponseStatus] = useState(null);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const sendVerificationCode = async () => {
+    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.requesterEmail, purpose: "requester-action" }) });
+    await readApiResponse(sendResponse);
+    setOtpSent(true);
+  };
+
+  const verifyEmail = async (purpose) => {
+    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.requesterEmail, purpose, code: otp }) });
+    await readApiResponse(verifyResponse);
+    setEmailVerified(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setError("");
+    try {
+      const requestResponse = await fetch(`${API_BASE}/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const created = await readApiResponse(requestResponse);
+
+      const matchResponse = await fetch(`${API_BASE}/match/${created._id}`, {
+        method: "POST",
+      });
+      const matched = await readApiResponse(matchResponse);
+
+      setResult(matched);
+      setResponseStatus({ status: "pending", volunteerResponses: [] });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!result || !result.request || result.request.status !== "pending") return undefined;
+    let active = true;
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/requests/${result.request._id}/status`);
+        const status = await readApiResponse(response);
+        if (active) setResponseStatus(status);
+      } catch (err) {
+        if (active) setError(err.message);
+      }
+    };
+    checkStatus();
+    const timer = setInterval(checkStatus, 5000);
+    return () => { active = false; clearInterval(timer); };
+  }, [result]);
+
+  return (
+    <div className="card">
+      <h2>Post a Need</h2>
+      <p className="card-intro">Tell us what is happening and we will look for the right kind of support nearby.</p>
+      <form onSubmit={handleSubmit}>
+        <input name="requesterName" placeholder="Your name" value={form.requesterName} onChange={handleChange} required />
+        <input name="requesterEmail" type="email" placeholder="Your email for verification" value={form.requesterEmail} onChange={(event) => { setEmailVerified(false); setOtpSent(false); handleChange(event); }} required />
+        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.requesterEmail || emailVerified}>{otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={() => verifyEmail("requester-action")} disabled={otp.length !== 6}>Verify</button>}</div>
+        {emailVerified && <p className="verified-note">Email verified. You can submit your request.</p>}
+        <textarea name="description" placeholder="Describe what you need help with" value={form.description} onChange={handleChange} required />
+        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <button type="submit" disabled={loading || !emailVerified}>{loading ? "Matching..." : "Submit Request"}</button>
+      </form>
+      {error && <p className="error-message">{error}</p>}
+
+      {result && (
+        <div className="result">
+          <div className="result-lead">
+            <div className="status">{result.matches.length ? "Rapid help match found" : "Request received"}<br />Category: {result.category} · Urgency: {result.urgency}</div>
+            {result.matches[0] && result.matches[0].nearby && <span className="nearby-badge">Nearest available</span>}
+          </div>
+          {result.matches.length ? <>
+            <strong>Best volunteer for this need</strong>
+            <ul>
+              {result.matches.map((m) => (
+                <li key={m.volunteerId}><strong>{m.name}</strong> — {m.nearby ? "same location" : m.location} · match {m.score}<br /><a className="map-link" href={mapsDirectionsUrl(form.location, m.location)} target="_blank" rel="noreferrer">Open location in Google Maps</a></li>
+              ))}
+            </ul>
+          </> : <p className="no-match">Your request is saved, but no volunteers are registered yet. Stay on this page while nearby help joins the community.</p>}
+          {responseStatus && responseStatus.status === "matched" && responseStatus.matchedVolunteer && <div className="response-status accepted"><strong>{responseStatus.matchedVolunteer.name} accepted your request.</strong><br />They are nearby in {responseStatus.matchedVolunteer.location} and can coordinate help with you.<br /><a className="map-link" href={mapsDirectionsUrl(responseStatus.matchedVolunteer.location, form.location)} target="_blank" rel="noreferrer">Open route in Google Maps</a></div>}
+          {responseStatus && responseStatus.status === "resolved" && <div className="response-status accepted"><strong>Your help request is complete.</strong><br />Volunteer: {responseStatus.matchedVolunteer?.name || "Assigned volunteer"} · Help type: {responseStatus.helpType}<br />{responseStatus.completionNote && <>Progress report: {responseStatus.completionNote}</>}</div>}
+          {responseStatus && responseStatus.status === "pending" && <div className="response-status">Waiting for a nearby volunteer to accept. This page checks for responses automatically.</div>}
+          {responseStatus && responseStatus.volunteerResponses && responseStatus.volunteerResponses.filter((response) => response.decision === "rejected").map((response) => <div className="response-status rejected" key={response._id}><strong>{response.volunteer?.name || "A volunteer"} could not accept.</strong>{response.reason && <><br />Reason: {response.reason}</>}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VolunteerForm() {
+  const [form, setForm] = useState({ name: "", email: "", password: "", availability: "", location: "", bio: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const sendVerificationCode = async () => {
+    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-registration" }) });
+    await readApiResponse(sendResponse);
+    setOtpSent(true);
+  };
+
+  const verifyEmail = async () => {
+    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-registration", code: otp }) });
+    await readApiResponse(verifyResponse);
+    setEmailVerified(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const payload = {
+        ...form,
+        availability: form.availability.split(",").map((s) => s.trim()).filter(Boolean),
+      };
+      const response = await fetch(`${API_BASE}/volunteers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      await readApiResponse(response);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    }
+  };
+
+  if (submitted) {
+    return <div className="card success-card"><div className="success-mark">&#10003;</div><div><h2>You are in.</h2><p className="card-intro">Thanks for offering your time. Your profile is ready to help someone nearby.</p></div></div>;
+  }
+
+  return (
+    <div className="card">
+      <h2>Volunteer Sign-up</h2>
+      <p className="card-intro">Share your availability and a little about yourself. Good things start with showing up.</p>
+      <form onSubmit={handleSubmit}>
+        <input name="name" placeholder="Full name" value={form.name} onChange={handleChange} required />
+        <input name="email" type="email" placeholder="Email" value={form.email} onChange={(event) => { setEmailVerified(false); setOtpSent(false); handleChange(event); }} required />
+        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.email || emailVerified}>{otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={verifyEmail} disabled={otp.length !== 6}>Verify</button>}</div>
+        {emailVerified && <p className="verified-note">Email verified. You can register.</p>}
+        <input name="password" type="password" minLength="8" placeholder="Create a password (8+ characters)" value={form.password} onChange={handleChange} required />
+        <p className="password-note">Your password is securely encrypted before it is stored.</p>
+        <input name="availability" placeholder="Availability (comma-separated)" value={form.availability} onChange={handleChange} />
+        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <textarea name="bio" placeholder="Short bio" value={form.bio} onChange={handleChange} />
+        <button type="submit" disabled={!emailVerified}>Register</button>
+      </form>
+      {error && <p className="error-message">{error}</p>}
+    </div>
+  );
+}
+
+function LoginForm({ onLogin }) {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${API_BASE}/volunteers/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await readApiResponse(response);
+      onLogin(data.volunteer);
+    } catch (err) {
+      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2>Welcome back</h2>
+      <p className="card-intro">Sign in to keep your volunteer profile and availability connected.</p>
+      <form onSubmit={handleSubmit}>
+        <input name="email" type="email" placeholder="Email address" value={form.email} onChange={handleChange} required />
+        <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <button type="submit" disabled={loading}>{loading ? "Signing in..." : "Sign in"}</button>
+      </form>
+      {error && <p className="error-message">{error}</p>}
+    </div>
+  );
+}
+
+function VolunteerProfileEditor({ volunteer, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    name: volunteer.name || "",
+    email: volunteer.email || "",
+    password: "",
+    availability: (volunteer.availability || []).join(", "),
+    location: volunteer.location || "",
+    bio: volunteer.bio || "",
+  });
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-action" }) });
+      await readApiResponse(sendResponse);
+      const code = window.prompt("Enter the verification code sent to your email:");
+      const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-action", code }) });
+      await readApiResponse(verifyResponse);
+      const payload = {
+        ...form,
+        availability: form.availability.split(",").map((item) => item.trim()).filter(Boolean),
+      };
+      if (!payload.password) delete payload.password;
+      const response = await fetch(`${API_BASE}/volunteers/${volunteer._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await readApiResponse(response);
+      onSave(data.volunteer);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2>Edit your profile</h2>
+      <p className="card-intro">Keep your availability and location current so nearby requests reach you.</p>
+      <form className="profile-edit" onSubmit={handleSubmit}>
+        <input name="name" placeholder="Full name" value={form.name} onChange={handleChange} required />
+        <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
+        <input name="availability" placeholder="Availability (comma-separated)" value={form.availability} onChange={handleChange} />
+        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <textarea name="bio" placeholder="Short bio" value={form.bio} onChange={handleChange} />
+        <input name="password" type="password" minLength="8" placeholder="New password (optional)" value={form.password} onChange={handleChange} />
+        <div className="profile-edit-actions"><button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</button><button type="button" className="secondary-button" onClick={onCancel}>Cancel</button></div>
+      </form>
+      {error && <p className="error-message">{error}</p>}
+    </div>
+  );
+}
+
+function NearbyRequests({ volunteer }) {
+  const [requests, setRequests] = useState([]);
+  const [acceptedRequests, setAcceptedRequests] = useState([]);
+  const [completedRequests, setCompletedRequests] = useState([]);
+  const [error, setError] = useState("");
+  const [responding, setResponding] = useState("");
+  const [reasonFor, setReasonFor] = useState("");
+  const [reason, setReason] = useState("");
+  const [acceptedRequest, setAcceptedRequest] = useState(null);
+  const [progressView, setProgressView] = useState("active");
+  const [completeFor, setCompleteFor] = useState("");
+  const [completionNote, setCompletionNote] = useState("");
+
+  async function loadNearbyRequests() {
+    const response = await fetch(`${API_BASE}/volunteers/${volunteer._id}/nearby-requests`);
+    const data = await readApiResponse(response);
+    setRequests(data.requests || []);
+    setAcceptedRequests(data.acceptedRequests || []);
+    setCompletedRequests(data.completedRequests || []);
+  }
+
+  async function completeRequest(requestId) {
+    setResponding(requestId);
+    setError("");
+    try {
+      await verifyVolunteerAction();
+      const response = await fetch(`${API_BASE}/requests/${requestId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ volunteerId: volunteer._id, completionNote }),
+      });
+      await readApiResponse(response);
+      setCompleteFor("");
+      setCompletionNote("");
+      setAcceptedRequest(null);
+      setProgressView("completed");
+      await loadNearbyRequests();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResponding("");
+    }
+  }
+
+  async function verifyVolunteerAction() {
+    const purpose = "volunteer-action";
+    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: volunteer.email, purpose }) });
+    await readApiResponse(sendResponse);
+    const code = window.prompt("Enter the verification code sent to your email:");
+    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: volunteer.email, purpose, code }) });
+    await readApiResponse(verifyResponse);
+  }
+
+  useEffect(() => {
+    loadNearbyRequests().catch((err) => setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message));
+  }, [volunteer._id]);
+
+  async function respondToRequest(requestId, action) {
+    setResponding(requestId);
+    setError("");
+    try {
+      await verifyVolunteerAction();
+      const response = await fetch(`${API_BASE}/requests/${requestId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ volunteerId: volunteer._id, action, reason: action === "reject" ? reason : "" }),
+      });
+      const result = await readApiResponse(response);
+      if (action === "accept") setAcceptedRequest(result.request);
+      setReasonFor("");
+      setReason("");
+      await loadNearbyRequests();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResponding("");
+    }
+  }
+
+  return (
+    <div className="card">
+      <h2>Help needed near you</h2>
+      <p className="card-intro">These requests are near you in <strong>{volunteer.location}</strong>, ranked by urgency.</p>
+      {acceptedRequest && <div className="response-status accepted"><strong>Request accepted.</strong><br />Help is needed in {acceptedRequest.location}.<br /><a className="map-link" href={mapsDirectionsUrl(volunteer.location, acceptedRequest.location)} target="_blank" rel="noreferrer">Open route in Google Maps</a></div>}
+      <h3>My help progress</h3>
+      <div className="progress-filter"><button className={progressView === "active" ? "active" : ""} onClick={() => setProgressView("active")}>Active help ({acceptedRequests.length})</button><button className={progressView === "completed" ? "active" : ""} onClick={() => setProgressView("completed")}>Completed ({completedRequests.length})</button></div>
+      {progressView === "active" && <div className="nearby-list">{acceptedRequests.length ? acceptedRequests.map((request) => <article className="help-item" key={request._id}><strong>{request.requesterName} needs help</strong><p>{request.description}</p><div className="help-meta"><span>Accepted</span><span>{request.category || "general help"} · {request.location}</span></div><a className="map-link" href={mapsDirectionsUrl(volunteer.location, request.location)} target="_blank" rel="noreferrer">Open route in Google Maps</a><div className="help-actions"><button className="accept-button" onClick={() => setCompleteFor(completeFor === request._id ? "" : request._id)}>Mark complete</button></div>{completeFor === request._id && <><input className="complete-note" placeholder="What help did you provide? (optional)" value={completionNote} onChange={(event) => setCompletionNote(event.target.value)} /><div className="help-actions"><button className="accept-button" disabled={responding === request._id} onClick={() => completeRequest(request._id)}>{responding === request._id ? "Saving..." : "Confirm complete"}</button></div></>}</article>) : <p className="no-match">No active accepted help right now.</p>}</div>}
+      {progressView === "completed" && <div className="nearby-list">{completedRequests.length ? completedRequests.map((request) => <article className="help-item progress-report" key={request._id}><strong>{request.requesterName} · completed help</strong><p>{request.description}</p><div className="help-meta"><span>{request.category || "general help"}</span><span>{request.completedLocation || request.location}</span></div>{request.completionNote && <p><strong>Progress report:</strong> {request.completionNote}</p>}<span className="map-link">Volunteer: {volunteer.name} · User: {request.requesterName}</span></article>) : <p className="no-match">No completed help yet.</p>}</div>}
+      <h3>New nearby requests</h3>
+      {error && <p className="error-message">{error}</p>}
+      {!error && !requests.length && <p className="no-match">No pending requests nearby right now. We will keep this space ready for the next person who needs help.</p>}
+      <div className="nearby-list">
+        {requests.map((request) => (
+          <article className="help-item" key={request.requestId}>
+            <strong>{request.requesterName} needs help</strong>
+            <p>{request.description}</p>
+            <div className="help-meta"><span className={request.urgency === "high" ? "urgent" : ""}>{request.urgency} urgency</span><span>{request.location}</span></div>
+            <a className="map-link" href={mapsSearchUrl(request.location)} target="_blank" rel="noreferrer">View request location in Google Maps</a>
+            <div className="help-actions">
+              <button className="accept-button" disabled={responding === request.requestId} onClick={() => respondToRequest(request.requestId, "accept")}>{responding === request.requestId ? "Saving..." : "Accept request"}</button>
+              <button className="reject-button" disabled={responding === request.requestId} onClick={() => setReasonFor(reasonFor === request.requestId ? "" : request.requestId)}>Reject</button>
+            </div>
+            {reasonFor === request.requestId && <><input className="reject-reason" placeholder="Why can’t you help? (optional)" value={reason} onChange={(event) => setReason(event.target.value)} /><div className="help-actions"><button className="reject-button" disabled={responding === request.requestId} onClick={() => respondToRequest(request.requestId, "reject")}>Confirm reject</button></div></>}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = useState("request");
+  const [volunteer, setVolunteer] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+
+  if (volunteer) {
+    return (
+      <div>
+        <header><h1>Community Connect</h1></header>
+        <main>
+          <section className="hero">
+            <div><div className="eyebrow">Your community profile</div><h2>Good to have<br /><em>you here.</em></h2><p className="hero-copy">You are signed in and ready to make a difference where it matters.</p></div>
+            <div className="hero-panel"><div className="panel-note"><div className="panel-label">Volunteer status</div><strong>Ready to help nearby.</strong><div className="panel-footer"><span>Profile connected to Community Connect</span></div></div></div>
+          </section>
+          <div className="card profile-card"><div className="profile-avatar">{volunteer.name.charAt(0).toUpperCase()}</div><div><h2>{volunteer.name}</h2><p>{volunteer.email} · {volunteer.location}</p></div><button className="secondary-button" onClick={() => setEditingProfile(true)}>Edit profile</button><button className="logout-button" onClick={() => { setEditingProfile(false); setVolunteer(null); }}>Sign out</button></div>
+          {editingProfile ? <VolunteerProfileEditor volunteer={volunteer} onSave={(updated) => { setVolunteer(updated); setEditingProfile(false); }} onCancel={() => setEditingProfile(false)} /> : <NearbyRequests volunteer={volunteer} />}
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <header><h1>Community Connect</h1></header>
+      <main>
+        <section className="hero">
+          <div>
+            <div className="eyebrow">Local care, made simple</div>
+            <h2>Small acts.<br /><em>Real impact.</em></h2>
+            <p className="hero-copy">A thoughtful way to connect people who need a hand with neighbors ready to help.</p>
+          </div>
+          <div className="hero-panel">
+            <div className="panel-note">
+              <div className="panel-label">Today in the community</div>
+              <strong>Help is closer than you think.</strong>
+              <div className="panel-footer"><div className="mini-avatars"><i>A</i><i>M</i><i>S</i></div><span>neighbors showing up</span></div>
+            </div>
+          </div>
+        </section>
+        <p className="workspace-label">Choose how you want to connect</p>
+        <nav>
+          <button className={tab === "request" ? "active" : ""} onClick={() => setTab("request")}>Need help</button>
+          <button className={tab === "volunteer" ? "active" : ""} onClick={() => setTab("volunteer")}>Volunteer</button>
+          <button className={tab === "login" ? "active" : ""} onClick={() => setTab("login")}>Sign in</button>
+        </nav>
+        {tab === "request" ? <RequestForm /> : tab === "volunteer" ? <VolunteerForm /> : <LoginForm onLogin={setVolunteer} />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "community-connect-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^18.0.3",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0",
+    "nodemailer": "^10.0.10"
+  }
+}

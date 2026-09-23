@@ -43,6 +43,22 @@ npm start
 http://localhost:5000
 ```
 
+## Docker
+
+Build the image:
+
+```powershell
+docker build -t community-connect .
+```
+
+Run it with your local `.env` file:
+
+```powershell
+docker run --name community-connect --env-file .env -p 5000:5000 community-connect
+```
+
+Then open `http://localhost:5000`. The `.env` file is ignored and is not included in the image.
+
 ## Main Features
 
 - User help requests stored in MongoDB.

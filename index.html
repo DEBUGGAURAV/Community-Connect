@@ -258,11 +258,14 @@ function RequestForm() {
   const [emailVerified, setEmailVerified] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const sendVerificationCode = async () => {
+    if (sendingOtp) return;
     setError("");
+    setSendingOtp(true);
     try {
       const email = form.requesterEmail.trim().toLowerCase();
       const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "requester-action" }) });
@@ -270,6 +273,8 @@ function RequestForm() {
       setOtpSent(true);
     } catch (err) {
       setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    } finally {
+      setSendingOtp(false);
     }
   };
 
@@ -336,7 +341,7 @@ function RequestForm() {
       <form onSubmit={handleSubmit}>
         <input name="requesterName" placeholder="Your name" value={form.requesterName} onChange={handleChange} required />
         <input name="requesterEmail" type="email" placeholder="Your email for verification" value={form.requesterEmail} onChange={(event) => { setEmailVerified(false); setOtpSent(false); handleChange(event); }} required />
-        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.requesterEmail || emailVerified}>{otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={() => verifyEmail("requester-action")} disabled={otp.length !== 6}>Verify</button>}</div>
+        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.requesterEmail || emailVerified || sendingOtp}>{sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={() => verifyEmail("requester-action")} disabled={otp.length !== 6}>Verify</button>}</div>
         {emailVerified && <p className="verified-note">Email verified. You can submit your request.</p>}
         <textarea name="description" placeholder="Describe what you need help with" value={form.description} onChange={handleChange} required />
         <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
@@ -375,11 +380,14 @@ function VolunteerForm() {
   const [emailVerified, setEmailVerified] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const sendVerificationCode = async () => {
+    if (sendingOtp) return;
     setError("");
+    setSendingOtp(true);
     try {
       const email = form.email.trim().toLowerCase();
       const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "volunteer-registration" }) });
@@ -387,6 +395,8 @@ function VolunteerForm() {
       setOtpSent(true);
     } catch (err) {
       setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
+    } finally {
+      setSendingOtp(false);
     }
   };
 
@@ -433,7 +443,7 @@ function VolunteerForm() {
       <form onSubmit={handleSubmit}>
         <input name="name" placeholder="Full name" value={form.name} onChange={handleChange} required />
         <input name="email" type="email" placeholder="Email" value={form.email} onChange={(event) => { setEmailVerified(false); setOtpSent(false); handleChange(event); }} required />
-        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.email || emailVerified}>{otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={verifyEmail} disabled={otp.length !== 6}>Verify</button>}</div>
+        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.email || emailVerified || sendingOtp}>{sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={verifyEmail} disabled={otp.length !== 6}>Verify</button>}</div>
         {emailVerified && <p className="verified-note">Email verified. You can register.</p>}
         <input name="password" type="password" minLength="8" placeholder="Create a password (8+ characters)" value={form.password} onChange={handleChange} required />
         <p className="password-note">Your password is securely encrypted before it is stored.</p>

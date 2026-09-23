@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const { randomInt } = require('crypto');
 
 const Volunteer = require('./Volunteer');
 const NeedRequest = require('./NeedRequest');
@@ -30,6 +31,9 @@ const mailTransport = smtpConfigured
       port: Number(process.env.SMTP_PORT || 587),
       secure: process.env.SMTP_SECURE === 'true',
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      pool: true,
+      maxConnections: 2,
+      maxMessages: 100,
     })
   : null;
 
@@ -56,12 +60,15 @@ app.post('/api/verification/send', async (req, res) => {
     }
     if (!mailTransport) return res.status(503).json({ error: 'Email delivery is not configured. Add SMTP settings to .env.' });
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    await EmailVerification.deleteMany({ email, purpose, verifiedAt: { $exists: false } });
+    const code = String(randomInt(100000, 1000000));
+    const [codeHash] = await Promise.all([
+      bcrypt.hash(code, 10),
+      EmailVerification.deleteMany({ email, purpose, verifiedAt: { $exists: false } }),
+    ]);
     await EmailVerification.create({
       email,
       purpose,
-      codeHash: await bcrypt.hash(code, 10),
+      codeHash,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
     await mailTransport.sendMail({

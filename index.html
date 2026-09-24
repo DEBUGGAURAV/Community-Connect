@@ -323,6 +323,8 @@ function RequestForm() {
     setResult(null);
     setError("");
     try {
+      if (!form.requesterEmail.trim()) throw new Error("A valid requester email is required.");
+      if (!emailVerified) throw new Error("Verify your email before submitting the request.");
       const requestResponse = await fetch(`${API_BASE}/requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

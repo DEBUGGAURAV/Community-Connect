@@ -341,10 +341,14 @@ app.post('/api/requests/:requestId/complete', async (req, res) => {
 
 app.post('/api/requests', async (req, res) => {
   try {
-    if (!(await requireVerifiedEmail(req.body.requesterEmail, 'requester-action'))) {
+    const requesterEmail = normalizeEmail(req.body?.requesterEmail);
+    if (!requesterEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requesterEmail)) {
+      return res.status(400).json({ error: 'A valid requester email is required.' });
+    }
+    if (!(await requireVerifiedEmail(requesterEmail, 'requester-action'))) {
       return res.status(403).json({ error: 'Verify your email before posting a request.' });
     }
-    const request = await NeedRequest.create(req.body);
+    const request = await NeedRequest.create({ ...req.body, requesterEmail });
     res.status(201).json(request);
   } catch (err) {
     res.status(400).json({ error: err.message });

@@ -608,10 +608,20 @@ function NearbyRequests({ volunteer }) {
 
   async function verifyVolunteerAction() {
     const purpose = "volunteer-action";
-    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: volunteer.email, purpose }) });
+    const email = String(volunteer?.email || "").trim().toLowerCase();
+    if (!email) {
+      throw new Error("Volunteer email is missing. Please sign in again.");
+    }
+
+    const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose }) });
     await readApiResponse(sendResponse);
-    const code = window.prompt("Enter the verification code sent to your email:");
-    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: volunteer.email, purpose, code }) });
+
+    const code = window.prompt("Enter the verification code sent to your email:")?.trim();
+    if (!code) {
+      throw new Error("OTP is required before accepting or rejecting a request.");
+    }
+
+    const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose, code }) });
     await readApiResponse(verifyResponse);
   }
 

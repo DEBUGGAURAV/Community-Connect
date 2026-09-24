@@ -1,22 +1,24 @@
-FROM node:20-bookworm
+# Use Node.js as the base
+FROM node:20-slim
 
-# Install Python
-RUN apt-get update \
-    && apt-get install -y python3 python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python3 for your match.py script
+RUN apt-get update && apt-get install -y python3
 
-WORKDIR /app
+# Set up a new user named "user" with user ID 1000 (Mandatory for Hugging Face)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user
+WORKDIR $HOME/app
 
-# Install Node dependencies
-COPY package*.json ./
-RUN npm ci --omit=dev
+# Copy package files and install Node dependencies
+COPY --chown=user package*.json ./
+RUN npm install
 
-# Install Python dependencies
-COPY requirements.txt ./
-RUN pip3 install --break-system-packages -r requirements.txt
+# Copy all other project files
+COPY --chown=user . .
 
-# Copy project files
-COPY . .
+# Expose the mandatory Hugging Face port
+EXPOSE 7860
 
-ENV NODE_ENV=production
-CMD ["npm", "start"]
+# Start the server
+CMD ["node", "server.js"]

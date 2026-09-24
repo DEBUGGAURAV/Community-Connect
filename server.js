@@ -136,9 +136,6 @@ app.post('/api/verification/verify', async (req, res) => {
 app.post('/api/volunteers', async (req, res) => {
   try {
     const { password, ...profile } = req.body;
-    if (!(await requireVerifiedEmail(profile.email, 'volunteer-registration'))) {
-      return res.status(403).json({ error: 'Verify your email before registering.' });
-    }
     if (!password || password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
@@ -178,9 +175,6 @@ app.post('/api/volunteers/login', async (req, res) => {
 app.put('/api/volunteers/:volunteerId', async (req, res) => {
   try {
     const { name, email, password, availability, location, bio } = req.body;
-    if (!(await requireVerifiedEmail(email, 'volunteer-action'))) {
-      return res.status(403).json({ error: 'Verify your email before editing your profile.' });
-    }
     const updates = { name, email: String(email || '').toLowerCase().trim(), availability, location, bio };
     if (password) {
       if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });

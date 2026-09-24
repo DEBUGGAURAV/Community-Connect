@@ -410,41 +410,9 @@ function VolunteerForm() {
   const [form, setForm] = useState({ name: "", email: "", password: "", availability: "", location: "", bio: "" });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
   const [locationError, setLocationError] = useState("");
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const sendVerificationCode = async () => {
-    if (sendingOtp) return;
-    setError("");
-    setSendingOtp(true);
-    try {
-      const email = form.email.trim().toLowerCase();
-      const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "volunteer-registration" }) });
-      await readApiResponse(sendResponse);
-      setOtpSent(true);
-    } catch (err) {
-      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
-    } finally {
-      setSendingOtp(false);
-    }
-  };
-
-  const verifyEmail = async () => {
-    setError("");
-    try {
-      const email = form.email.trim().toLowerCase();
-      const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "volunteer-registration", code: otp }) });
-      await readApiResponse(verifyResponse);
-      setEmailVerified(true);
-    } catch (err) {
-      setError(err.message === "Failed to fetch" ? "The backend is offline. Start it with npm start." : err.message);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -476,9 +444,7 @@ function VolunteerForm() {
       <p className="card-intro">Share your availability and a little about yourself. Good things start with showing up.</p>
       <form onSubmit={handleSubmit}>
         <input name="name" placeholder="Full name" value={form.name} onChange={handleChange} required />
-        <input name="email" type="email" placeholder="Email" value={form.email} onChange={(event) => { setEmailVerified(false); setOtpSent(false); handleChange(event); }} required />
-        <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.email || emailVerified || sendingOtp}>{sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={verifyEmail} disabled={otp.length !== 6}>Verify</button>}</div>
-        {emailVerified && <p className="verified-note">Email verified. You can register.</p>}
+        <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
         <input name="password" type="password" minLength="8" placeholder="Create a password (8+ characters)" value={form.password} onChange={handleChange} required />
         <p className="password-note">Your password is securely encrypted before it is stored.</p>
         <input name="availability" placeholder="Availability (comma-separated)" value={form.availability} onChange={handleChange} />
@@ -488,7 +454,7 @@ function VolunteerForm() {
         </div>
         {locationError && <p className="error-message">{locationError}</p>}
         <textarea name="bio" placeholder="Short bio" value={form.bio} onChange={handleChange} />
-        <button type="submit" disabled={!emailVerified}>Register</button>
+        <button type="submit">Register</button>
       </form>
       {error && <p className="error-message">{error}</p>}
     </div>
@@ -555,11 +521,6 @@ function VolunteerProfileEditor({ volunteer, onSave, onCancel }) {
     setSaving(true);
     setError("");
     try {
-      const sendResponse = await fetch(`${API_BASE}/verification/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-action" }) });
-      await readApiResponse(sendResponse);
-      const code = window.prompt("Enter the verification code sent to your email:");
-      const verifyResponse = await fetch(`${API_BASE}/verification/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, purpose: "volunteer-action", code }) });
-      await readApiResponse(verifyResponse);
       const payload = {
         ...form,
         availability: form.availability.split(",").map((item) => item.trim()).filter(Boolean),

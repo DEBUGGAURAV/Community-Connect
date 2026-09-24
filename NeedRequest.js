@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const needRequestSchema = new mongoose.Schema({
   requesterName: { type: String, required: true },
-  requesterEmail: { type: String, required: true },
+  requesterEmail: { type: String, default: '' },
   helpType: { type: String },
   description: { type: String, required: true }, // free-text need description
   category: { type: String },      // filled in by ML step (e.g. "food", "medical")

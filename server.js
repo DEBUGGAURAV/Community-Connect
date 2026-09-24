@@ -259,13 +259,18 @@ app.get('/api/volunteers/:volunteerId/nearby-requests', async (req, res) => {
 
 app.post('/api/requests/:requestId/respond', async (req, res) => {
   try {
+    const requestId = String(req.params.requestId || '').trim();
     const { volunteerId, action, reason } = req.body;
+
+    if (!requestId || requestId === 'undefined' || requestId === 'null') {
+      return res.status(400).json({ error: 'Request id is missing.' });
+    }
     if (!volunteerId || !['accept', 'reject'].includes(action)) {
       return res.status(400).json({ error: 'A volunteer and valid action are required.' });
     }
 
     const [request, volunteer] = await Promise.all([
-      NeedRequest.findById(req.params.requestId),
+      NeedRequest.findById(requestId),
       Volunteer.findById(volunteerId),
     ]);
     if (!request || !volunteer) return res.status(404).json({ error: 'Request or volunteer not found.' });

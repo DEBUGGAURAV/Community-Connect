@@ -141,6 +141,7 @@ def rank_requests(volunteer, requests):
             matched_skills.append(category)
         skill_score = len(matched_skills) / max(len(skill_tokens), 1)
         results.append({
+            '_id': request.get('_id'),
             'requestId': request.get('_id'),
             'requesterName': request.get('requesterName'),
             'description': request.get('description'),

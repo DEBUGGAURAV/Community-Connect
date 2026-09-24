@@ -691,19 +691,22 @@ function NearbyRequests({ volunteer }) {
       {error && <p className="error-message">{error}</p>}
       {!error && !requests.length && <p className="no-match">No pending requests nearby right now. We will keep this space ready for the next person who needs help.</p>}
       <div className="nearby-list">
-        {requests.map((request) => (
-          <article className="help-item" key={request._id}>
-            <strong>{request.requesterName} needs help</strong>
-            <p>{request.description}</p>
-            <div className="help-meta"><span className={request.urgency === "high" ? "urgent" : ""}>{request.urgency} urgency</span><span>{request.location}</span></div>
-            <a className="map-link" href={mapsSearchUrl(request.location)} target="_blank" rel="noreferrer">View request location in Google Maps</a>
-            <div className="help-actions">
-              <button className="accept-button" disabled={responding === request._id} onClick={() => respondToRequest(request._id, "accept")}>{responding === request._id ? "Saving..." : "Accept request"}</button>
-              <button className="reject-button" disabled={responding === request._id} onClick={() => setReasonFor(reasonFor === request._id ? "" : request._id)}>Reject</button>
-            </div>
-            {reasonFor === request._id && <><input className="reject-reason" placeholder="Why can’t you help? (optional)" value={reason} onChange={(event) => setReason(event.target.value)} /><div className="help-actions"><button className="reject-button" disabled={responding === request._id} onClick={() => respondToRequest(request._id, "reject")}>Confirm reject</button></div></>}
-          </article>
-        ))}
+        {requests.map((request) => {
+          const requestId = request._id || request.requestId;
+          return (
+            <article className="help-item" key={requestId}>
+              <strong>{request.requesterName} needs help</strong>
+              <p>{request.description}</p>
+              <div className="help-meta"><span className={request.urgency === "high" ? "urgent" : ""}>{request.urgency} urgency</span><span>{request.location}</span></div>
+              <a className="map-link" href={mapsSearchUrl(request.location)} target="_blank" rel="noreferrer">View request location in Google Maps</a>
+              <div className="help-actions">
+                <button className="accept-button" disabled={responding === requestId || !requestId} onClick={() => respondToRequest(requestId, "accept")}>{responding === requestId ? "Saving..." : "Accept request"}</button>
+                <button className="reject-button" disabled={responding === requestId || !requestId} onClick={() => setReasonFor(reasonFor === requestId ? "" : requestId)}>Reject</button>
+              </div>
+              {reasonFor === requestId && <><input className="reject-reason" placeholder="Why can’t you help? (optional)" value={reason} onChange={(event) => setReason(event.target.value)} /><div className="help-actions"><button className="reject-button" disabled={responding === requestId || !requestId} onClick={() => respondToRequest(requestId, "reject")}>Confirm reject</button></div></>}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

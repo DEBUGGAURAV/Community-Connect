@@ -17,74 +17,43 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_connect';
-const emailProvider = (process.env.EMAIL_PROVIDER || 'resend').toLowerCase();
-const emailApiUrl = process.env.EMAIL_API_URL || (
-  emailProvider === 'sendgrid'
-    ? 'https://api.sendgrid.com/v3/mail/send'
-    : 'https://api.resend.com/emails'
-);
-const emailApiKey = process.env.EMAIL_API_KEY || process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY;
-const emailFrom = process.env.EMAIL_FROM || 'Community Connect <noreply@example.com>';
-const httpEmailConfigured = Boolean(emailApiKey && emailFrom && !emailFrom.includes('noreply@example.com'));
+const emailApiKey = process.env.EMAIL_API_KEY;
+const emailApiSecret = process.env.EMAIL_API_SECRET;
+const emailApiUrl = process.env.EMAIL_API_URL || 'https://api.mailjet.com/v3.1/send';
+const emailFrom = process.env.EMAIL_FROM || 'Community Connect <noreply@yourdomain.com>';
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
-async function sendEmailViaHttp({ to, subject, text, html }) {
-  if (!httpEmailConfigured) {
-    throw new Error('HTTP email API is not configured. Add EMAIL_API_KEY and EMAIL_FROM to .env.');
+async function sendVerificationEmail(to, code) {
+  if (!emailApiKey || !emailApiSecret || !emailFrom) {
+    throw new Error('Mailjet is not configured. Set EMAIL_API_KEY, EMAIL_API_SECRET, and EMAIL_FROM in your environment.');
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${emailApiKey}`,
-  };
-
-  let body;
-  if (emailProvider === 'sendgrid') {
-    body = {
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: emailFrom.replace(/^.*<(.+)>$/, '$1'), name: emailFrom.replace(/<.*>/, '').trim() || 'Community Connect' },
-      subject,
-      content: [
-        { type: 'text/plain', value: text },
-        ...(html ? [{ type: 'text/html', value: html }] : []),
-      ],
-    };
-  } else {
-    body = {
-      from: emailFrom,
-      to: [to],
-      subject,
-      text,
-      ...(html ? { html } : {}),
-    };
-  }
-
+  const auth = Buffer.from(`${emailApiKey}:${emailApiSecret}`).toString('base64');
   const response = await fetch(emailApiUrl, {
     method: 'POST',
-    headers,
-    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${auth}`,
+    },
+    body: JSON.stringify({
+      Messages: [{
+        From: { Email: emailFrom.match(/<([^>]+)>/)?.[1] || emailFrom, Name: emailFrom.replace(/\s*<[^>]+>$/, '') || 'Community Connect' },
+        To: [{ Email: to }],
+        Subject: 'Your Community Connect verification code',
+        TextPart: `Your verification code is: ${code}\nThis code expires in 10 minutes.`,
+      }],
+    }),
   });
 
   const responseText = await response.text();
   if (!response.ok) {
-    throw new Error(`Email API request failed (${response.status}): ${responseText}`);
+    throw new Error(`Mailjet API Error (${response.status}): ${responseText}`);
   }
 
   return responseText;
-}
-
-async function sendVerificationEmail(email, code) {
-  const text = `Your verification code is ${code}. It expires in 10 minutes.`;
-  const html = `<p>Your verification code is <strong>${code}</strong>. It expires in 10 minutes.</p>`;
-  await sendEmailViaHttp({
-    to: email,
-    subject: 'Community Connect verification code',
-    text,
-    html,
-  });
 }
 
 async function requireVerifiedEmail(email, purpose) {
@@ -98,46 +67,67 @@ async function requireVerifiedEmail(email, purpose) {
 
 app.post('/api/verification/send', async (req, res) => {
   try {
-    const email = normalizeEmail(req.body.email);
-    const purpose = req.body.purpose;
-    if (!email || !email.includes('@')) return res.status(400).json({ error: 'A valid email is required.' });
-    if (!['volunteer-registration', 'requester-action', 'volunteer-action'].includes(purpose)) {
+    const email = normalizeEmail(req.body?.email);
+    const purpose = req.body?.purpose;
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'A valid email address is required.' });
+    }
+
+    const allowedPurposes = ['volunteer-registration', 'requester-action', 'volunteer-action'];
+    if (!allowedPurposes.includes(purpose)) {
       return res.status(400).json({ error: 'Invalid verification purpose.' });
     }
-    if (!httpEmailConfigured) return res.status(503).json({ error: 'Email delivery is not configured. Add EMAIL_API_KEY and EMAIL_FROM to .env.' });
 
-    const code = String(randomInt(100000, 1000000));
-    const [codeHash] = await Promise.all([
-      bcrypt.hash(code, 10),
-      EmailVerification.deleteMany({ email, purpose, verifiedAt: { $exists: false } }),
-    ]);
-    await EmailVerification.create({
-      email,
-      purpose,
-      codeHash,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    });
+    const code = String(randomInt(100000, 999999));
+    const codeHash = await bcrypt.hash(code, 12);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await EmailVerification.findOneAndUpdate(
+      { email, purpose },
+      { email, purpose, codeHash, expiresAt, verifiedAt: null },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
     await sendVerificationEmail(email, code);
     res.json({ message: 'Verification code sent.' });
   } catch (err) {
     console.error('OTP email delivery failed:', err.message);
-    res.status(503).json({ error: 'Could not send verification code. Check EMAIL_API_KEY and EMAIL_FROM in .env.' });
+    res.status(503).json({ error: err.message });
   }
 });
 
 app.post('/api/verification/verify', async (req, res) => {
   try {
-    const email = normalizeEmail(req.body.email);
-    const { code, purpose } = req.body;
-    const verification = await EmailVerification.findOne({ email, purpose, verifiedAt: { $exists: false } }).sort({ createdAt: -1 });
-    if (!verification || verification.expiresAt < new Date() || !(await bcrypt.compare(String(code || ''), verification.codeHash))) {
-      return res.status(400).json({ error: 'Invalid or expired verification code.' });
+    const email = normalizeEmail(req.body?.email);
+    const purpose = req.body?.purpose;
+    const code = String(req.body?.code || '').trim();
+
+    if (!email || !purpose || !code) {
+      return res.status(400).json({ error: 'Email, purpose, and code are required.' });
     }
+
+    const verification = await EmailVerification.findOne({
+      email,
+      purpose,
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
+
+    if (!verification) {
+      return res.status(400).json({ error: 'Verification code expired or not found.' });
+    }
+
+    const isValid = await bcrypt.compare(code, verification.codeHash);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
     verification.verifiedAt = new Date();
     await verification.save();
-    res.json({ verified: true });
+
+    res.json({ message: 'Email verified successfully.' });
   } catch (err) {
-    res.status(500).json({ error: 'Could not verify email.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -334,7 +324,11 @@ app.post('/api/requests/:requestId/complete', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('OTP email delivery failed:', err.message);
+
+    res.status(503).json({
+      error: err.message
+    });
   }
 });
 
@@ -418,6 +412,10 @@ app.post('/api/match/:requestId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found.' });
 });
 
 const PORT = process.env.PORT || 7860;

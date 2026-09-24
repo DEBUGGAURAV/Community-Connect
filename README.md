@@ -7,7 +7,7 @@ Community Connect connects people requesting local help with nearby volunteers. 
 - Node.js 18 or newer
 - MongoDB Atlas or local MongoDB
 - Python 3.10 or newer
-- SMTP account for email OTP delivery
+- HTTP email API key (for example Resend or SendGrid)
 
 ## Setup
 
@@ -23,13 +23,18 @@ npm install
 python -m pip install -r requirements.txt
 ```
 
-3. Create `.env` in the project root. Start from `.env.example`:
+3. Create `.env` in the project root. Example values:
 
-```powershell
-Copy-Item .env.example .env
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/community_connect
+EMAIL_PROVIDER=resend
+EMAIL_API_URL=https://api.resend.com/emails
+EMAIL_API_KEY=your_http_email_api_key
+EMAIL_FROM=Community Connect <noreply@example.com>
 ```
 
-Update `.env` with your MongoDB and SMTP values. Never commit `.env`.
+Use the same values from your HTTP email provider. Never commit `.env`.
 
 4. Start the server:
 

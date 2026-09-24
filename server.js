@@ -5,7 +5,6 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const { randomInt } = require('crypto');
 
 const Volunteer = require('./Volunteer');
@@ -18,27 +17,74 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_connect';
-
-const smtpConfigured = process.env.SMTP_HOST
-  && process.env.SMTP_USER
-  && process.env.SMTP_PASS
-  && !process.env.SMTP_USER.includes('your-email@example.com')
-  && !process.env.SMTP_PASS.includes('your-gmail-app-password');
-
-const mailTransport = smtpConfigured
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      pool: true,
-      maxConnections: 2,
-      maxMessages: 100,
-    })
-  : null;
+const emailProvider = (process.env.EMAIL_PROVIDER || 'resend').toLowerCase();
+const emailApiUrl = process.env.EMAIL_API_URL || (
+  emailProvider === 'sendgrid'
+    ? 'https://api.sendgrid.com/v3/mail/send'
+    : 'https://api.resend.com/emails'
+);
+const emailApiKey = process.env.EMAIL_API_KEY || process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY;
+const emailFrom = process.env.EMAIL_FROM || 'Community Connect <noreply@example.com>';
+const httpEmailConfigured = Boolean(emailApiKey && emailFrom && !emailFrom.includes('noreply@example.com'));
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+async function sendEmailViaHttp({ to, subject, text, html }) {
+  if (!httpEmailConfigured) {
+    throw new Error('HTTP email API is not configured. Add EMAIL_API_KEY and EMAIL_FROM to .env.');
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${emailApiKey}`,
+  };
+
+  let body;
+  if (emailProvider === 'sendgrid') {
+    body = {
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: emailFrom.replace(/^.*<(.+)>$/, '$1'), name: emailFrom.replace(/<.*>/, '').trim() || 'Community Connect' },
+      subject,
+      content: [
+        { type: 'text/plain', value: text },
+        ...(html ? [{ type: 'text/html', value: html }] : []),
+      ],
+    };
+  } else {
+    body = {
+      from: emailFrom,
+      to: [to],
+      subject,
+      text,
+      ...(html ? { html } : {}),
+    };
+  }
+
+  const response = await fetch(emailApiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    throw new Error(`Email API request failed (${response.status}): ${responseText}`);
+  }
+
+  return responseText;
+}
+
+async function sendVerificationEmail(email, code) {
+  const text = `Your verification code is ${code}. It expires in 10 minutes.`;
+  const html = `<p>Your verification code is <strong>${code}</strong>. It expires in 10 minutes.</p>`;
+  await sendEmailViaHttp({
+    to: email,
+    subject: 'Community Connect verification code',
+    text,
+    html,
+  });
 }
 
 async function requireVerifiedEmail(email, purpose) {
@@ -58,7 +104,7 @@ app.post('/api/verification/send', async (req, res) => {
     if (!['volunteer-registration', 'requester-action', 'volunteer-action'].includes(purpose)) {
       return res.status(400).json({ error: 'Invalid verification purpose.' });
     }
-    if (!mailTransport) return res.status(503).json({ error: 'Email delivery is not configured. Add SMTP settings to .env.' });
+    if (!httpEmailConfigured) return res.status(503).json({ error: 'Email delivery is not configured. Add EMAIL_API_KEY and EMAIL_FROM to .env.' });
 
     const code = String(randomInt(100000, 1000000));
     const [codeHash] = await Promise.all([
@@ -71,16 +117,11 @@ app.post('/api/verification/send', async (req, res) => {
       codeHash,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
-    await mailTransport.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: email,
-      subject: 'Community Connect verification code',
-      text: `Your verification code is ${code}. It expires in 10 minutes.`,
-    });
+    await sendVerificationEmail(email, code);
     res.json({ message: 'Verification code sent.' });
   } catch (err) {
     console.error('OTP email delivery failed:', err.message);
-    res.status(503).json({ error: 'Could not send verification code. Check SMTP settings in .env.' });
+    res.status(503).json({ error: 'Could not send verification code. Check EMAIL_API_KEY and EMAIL_FROM in .env.' });
   }
 });
 

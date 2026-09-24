@@ -235,6 +235,32 @@ function mapsDirectionsUrl(origin, destination) {
   return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
 }
 
+async function fetchCurrentLocation(setLocation, setLocationError) {
+  if (!navigator.geolocation) {
+    setLocationError('Geolocation is not supported in this browser. Please type your location manually.');
+    return;
+  }
+
+  setLocationError('Fetching your live location...');
+
+  navigator.geolocation.getCurrentPosition(async (position) => {
+    const { latitude, longitude } = position.coords;
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+      const data = await response.json();
+      const display = data?.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      setLocation(display);
+      setLocationError('');
+    } catch (error) {
+      const fallback = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      setLocation(fallback);
+      setLocationError('');
+    }
+  }, () => {
+    setLocationError('Location access was denied. Please type your location manually.');
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
 async function readApiResponse(response) {
   const text = await response.text();
   let body = {};
@@ -259,6 +285,7 @@ function RequestForm() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -344,7 +371,11 @@ function RequestForm() {
         <div className="otp-row"><input inputMode="numeric" maxLength="6" placeholder="6-digit OTP" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={!otpSent || emailVerified} /><button type="button" className="otp-button" onClick={sendVerificationCode} disabled={!form.requesterEmail || emailVerified || sendingOtp}>{sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}</button>{otpSent && !emailVerified && <button type="button" className="otp-button" onClick={() => verifyEmail("requester-action")} disabled={otp.length !== 6}>Verify</button>}</div>
         {emailVerified && <p className="verified-note">Email verified. You can submit your request.</p>}
         <textarea name="description" placeholder="Describe what you need help with" value={form.description} onChange={handleChange} required />
-        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <div className="otp-row">
+          <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+          <button type="button" className="otp-button" onClick={() => fetchCurrentLocation((value) => setForm({ ...form, location: value }), setLocationError)}>Use live location</button>
+        </div>
+        {locationError && <p className="error-message">{locationError}</p>}
         <button type="submit" disabled={loading || !emailVerified}>{loading ? "Matching..." : "Submit Request"}</button>
       </form>
       {error && <p className="error-message">{error}</p>}
@@ -381,6 +412,7 @@ function VolunteerForm() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -448,7 +480,11 @@ function VolunteerForm() {
         <input name="password" type="password" minLength="8" placeholder="Create a password (8+ characters)" value={form.password} onChange={handleChange} required />
         <p className="password-note">Your password is securely encrypted before it is stored.</p>
         <input name="availability" placeholder="Availability (comma-separated)" value={form.availability} onChange={handleChange} />
-        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <div className="otp-row">
+          <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+          <button type="button" className="otp-button" onClick={() => fetchCurrentLocation((value) => setForm({ ...form, location: value }), setLocationError)}>Use live location</button>
+        </div>
+        {locationError && <p className="error-message">{locationError}</p>}
         <textarea name="bio" placeholder="Short bio" value={form.bio} onChange={handleChange} />
         <button type="submit" disabled={!emailVerified}>Register</button>
       </form>
@@ -508,6 +544,7 @@ function VolunteerProfileEditor({ volunteer, onSave, onCancel }) {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value });
 
@@ -548,7 +585,11 @@ function VolunteerProfileEditor({ volunteer, onSave, onCancel }) {
         <input name="name" placeholder="Full name" value={form.name} onChange={handleChange} required />
         <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} required />
         <input name="availability" placeholder="Availability (comma-separated)" value={form.availability} onChange={handleChange} />
-        <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+        <div className="otp-row">
+          <input name="location" placeholder="Location" value={form.location} onChange={handleChange} required />
+          <button type="button" className="otp-button" onClick={() => fetchCurrentLocation((value) => setForm({ ...form, location: value }), setLocationError)}>Use live location</button>
+        </div>
+        {locationError && <p className="error-message">{locationError}</p>}
         <textarea name="bio" placeholder="Short bio" value={form.bio} onChange={handleChange} />
         <input name="password" type="password" minLength="8" placeholder="New password (optional)" value={form.password} onChange={handleChange} />
         <div className="profile-edit-actions"><button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</button><button type="button" className="secondary-button" onClick={onCancel}>Cancel</button></div>
@@ -651,16 +692,16 @@ function NearbyRequests({ volunteer }) {
       {!error && !requests.length && <p className="no-match">No pending requests nearby right now. We will keep this space ready for the next person who needs help.</p>}
       <div className="nearby-list">
         {requests.map((request) => (
-          <article className="help-item" key={request.requestId}>
+          <article className="help-item" key={request._id}>
             <strong>{request.requesterName} needs help</strong>
             <p>{request.description}</p>
             <div className="help-meta"><span className={request.urgency === "high" ? "urgent" : ""}>{request.urgency} urgency</span><span>{request.location}</span></div>
             <a className="map-link" href={mapsSearchUrl(request.location)} target="_blank" rel="noreferrer">View request location in Google Maps</a>
             <div className="help-actions">
-              <button className="accept-button" disabled={responding === request.requestId} onClick={() => respondToRequest(request.requestId, "accept")}>{responding === request.requestId ? "Saving..." : "Accept request"}</button>
-              <button className="reject-button" disabled={responding === request.requestId} onClick={() => setReasonFor(reasonFor === request.requestId ? "" : request.requestId)}>Reject</button>
+              <button className="accept-button" disabled={responding === request._id} onClick={() => respondToRequest(request._id, "accept")}>{responding === request._id ? "Saving..." : "Accept request"}</button>
+              <button className="reject-button" disabled={responding === request._id} onClick={() => setReasonFor(reasonFor === request._id ? "" : request._id)}>Reject</button>
             </div>
-            {reasonFor === request.requestId && <><input className="reject-reason" placeholder="Why can’t you help? (optional)" value={reason} onChange={(event) => setReason(event.target.value)} /><div className="help-actions"><button className="reject-button" disabled={responding === request.requestId} onClick={() => respondToRequest(request.requestId, "reject")}>Confirm reject</button></div></>}
+            {reasonFor === request._id && <><input className="reject-reason" placeholder="Why can’t you help? (optional)" value={reason} onChange={(event) => setReason(event.target.value)} /><div className="help-actions"><button className="reject-button" disabled={responding === request._id} onClick={() => respondToRequest(request._id, "reject")}>Confirm reject</button></div></>}
           </article>
         ))}
       </div>

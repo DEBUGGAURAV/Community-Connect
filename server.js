@@ -17,17 +17,26 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_connect';
-const brevoApiKey = (process.env.BREVO_API_KEY || process.env.BREVO_SMTP_KEY || process.env.EMAIL_API_KEY || '').trim();
-const brevoFromEmail = (process.env.BREVO_FROM_EMAIL || process.env.BREVO_SMTP_USER || process.env.EMAIL_FROM?.match(/<([^>]+)>/)?.[1] || process.env.EMAIL_FROM || 'jnplotus@gmail.com').trim();
-const brevoFromName = (process.env.BREVO_FROM_NAME || 'Free Study Material').trim();
+function getBrevoConfig() {
+  const apiKey = (process.env.BREVO_API_KEY || process.env.BREVO_SMTP_KEY || '').trim();
+  const fromEmail = (process.env.BREVO_FROM_EMAIL || process.env.BREVO_SMTP_USER || process.env.EMAIL_FROM?.match(/<([^>]+)>/)?.[1] || process.env.EMAIL_FROM || 'jnplotus@gmail.com').trim();
+  const fromName = (process.env.BREVO_FROM_NAME || 'Free Study Material').trim();
+  return { apiKey, fromEmail, fromName };
+}
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
 async function sendVerificationEmail(to, code) {
+  const { apiKey: brevoApiKey, fromEmail: brevoFromEmail, fromName: brevoFromName } = getBrevoConfig();
+
   if (!brevoApiKey) {
-    throw new Error('Brevo is not configured. Set BREVO_API_KEY (or BREVO_SMTP_KEY) and BREVO_FROM_EMAIL in your environment.');
+    throw new Error('Brevo is not configured. Set BREVO_API_KEY in your .env or cloud hosting dashboard (e.g. Render environment variables).');
+  }
+
+  if (!brevoApiKey.startsWith('xkeysib-')) {
+    throw new Error('Invalid Brevo API key format. Brevo v3 API keys must start with "xkeysib-". Make sure you have not set an old Mailjet key or invalid key in your environment.');
   }
 
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {

@@ -17,40 +17,42 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/community_connect';
-const emailApiKey = process.env.EMAIL_API_KEY;
-const emailApiSecret = process.env.EMAIL_API_SECRET;
-const emailApiUrl = process.env.EMAIL_API_URL || 'https://api.mailjet.com/v3.1/send';
-const emailFrom = process.env.EMAIL_FROM || 'Community Connect <noreply@yourdomain.com>';
+const brevoApiKey = (process.env.BREVO_API_KEY || process.env.BREVO_SMTP_KEY || process.env.EMAIL_API_KEY || '').trim();
+const brevoFromEmail = (process.env.BREVO_FROM_EMAIL || process.env.BREVO_SMTP_USER || process.env.EMAIL_FROM?.match(/<([^>]+)>/)?.[1] || process.env.EMAIL_FROM || 'jnplotus@gmail.com').trim();
+const brevoFromName = (process.env.BREVO_FROM_NAME || 'Free Study Material').trim();
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
 async function sendVerificationEmail(to, code) {
-  if (!emailApiKey || !emailApiSecret || !emailFrom) {
-    throw new Error('Mailjet is not configured. Set EMAIL_API_KEY, EMAIL_API_SECRET, and EMAIL_FROM in your environment.');
+  if (!brevoApiKey) {
+    throw new Error('Brevo is not configured. Set BREVO_API_KEY (or BREVO_SMTP_KEY) and BREVO_FROM_EMAIL in your environment.');
   }
 
-  const auth = Buffer.from(`${emailApiKey}:${emailApiSecret}`).toString('base64');
-  const response = await fetch(emailApiUrl, {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Basic ${auth}`,
+      accept: 'application/json',
+      'api-key': brevoApiKey,
+      'content-type': 'application/json',
     },
     body: JSON.stringify({
-      Messages: [{
-        From: { Email: emailFrom.match(/<([^>]+)>/)?.[1] || emailFrom, Name: emailFrom.replace(/\s*<[^>]+>$/, '') || 'Community Connect' },
-        To: [{ Email: to }],
-        Subject: 'Your Community Connect verification code',
-        TextPart: `Your verification code is: ${code}\nThis code expires in 10 minutes.`,
-      }],
+      sender: {
+        name: brevoFromName,
+        email: brevoFromEmail,
+      },
+      to: [{ email: to }],
+      subject: 'Your Community Connect verification code',
+      textContent: `Your verification code is: ${code}
+This code expires in 10 minutes.`,
+      htmlContent: `<!DOCTYPE html><html><body><p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p></body></html>`,
     }),
   });
 
   const responseText = await response.text();
   if (!response.ok) {
-    throw new Error(`Mailjet API Error (${response.status}): ${responseText}`);
+    throw new Error(`Brevo API Error (${response.status}): ${responseText}`);
   }
 
   return responseText;

@@ -28,10 +28,14 @@ python -m pip install -r requirements.txt
 ```env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/community_connect
-EMAIL_PROVIDER=resend
-EMAIL_API_URL=https://api.resend.com/emails
-EMAIL_API_KEY=your_http_email_api_key
-EMAIL_FROM=Community Connect <noreply@example.com>
+EMAIL_PROVIDER=brevo
+BREVO_SMTP_HOST=smtp-relay.brevo.com
+BREVO_SMTP_PORT=587
+BREVO_SMTP_USER=your_smtp_user
+BREVO_SMTP_KEY=your_smtp_key
+BREVO_API_KEY=your_brevo_api_key
+BREVO_FROM_EMAIL=your_email@domain.com
+BREVO_FROM_NAME=Community Connect
 ```
 
 Use the same values from your HTTP email provider. Never commit `.env`.
